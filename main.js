@@ -23,7 +23,13 @@ var config = {
     gameplay:{
         scene_speed: 200,
         loop_delay: 3000,
-        hole_size: 2.5
+        hole_size: 3,
+        debug: true,
+        firework: {
+            actual_size: 500,
+            size_max: 5,
+            size_min: 2,
+        }
     },
 };
 
@@ -69,10 +75,8 @@ function create () {
 
     this.input.on('pointerdown', function (pointer) {
         console.log(this.game.loop.frame, 'down B');
-        // jump(balloon);
+
         jump(this);
-        // tween(balloon).to({angle: -10}, 100).start();
-        // this.add.image(pointer.x, pointer.y, 'balls', Phaser.Math.Between(0, 5));
 
     }, this);
 
@@ -96,35 +100,42 @@ function addFireWork() {
     // Set hole (0 - 6)
     // hole_id = Math.floor(Math.random() * block_max) + 1;
     holeId = getRndInteger(0, block_max - config.gameplay.hole_size);
-    // holeId = 4
+    holeId = 1;
     holeFrom = holeId;
     holeTo = holeId + config.gameplay.hole_size;
+
 
     //position
     holePlotX = this.cameras.main.displayWidth;
     holePlotY = holeFrom * config.player.height + (holeTo * config.player.height - holeFrom * config.player.height) / 2
 
     // Debug - plot hole
-    // console.log(block_max + " Add Hole "  + holeId + " hold " + holeFrom + "/" + holeTo);
-    console.log(
-        block_max + " Add Hole "  + holeId +
-        " From " + holeFrom * config.player.height +
-        "/" + holeTo * config.player.height
-    );
-    var holeGuide = this.physics.add.image( holePlotX, holePlotY, 'holeGuide');
+    if (config.gameplay.debug) {
+        // console.log(block_max + " Add Hole "  + holeId + " hold " + holeFrom + "/" + holeTo);
+        console.log(
+            "Max:" + block_max + " Add Hole "  + holeId +
+            " From " + holeFrom * config.player.height +
+            "/" + holeTo * config.player.height
+        );
+        var holeGuide = this.physics.add.image( holePlotX, holePlotY, 'holeGuide');
 
-    holeGuide.setScale(1, config.gameplay.hole_size);
+        holeGuide.setScale(1, config.gameplay.hole_size);
 
-    holeGuide.body.velocity.x = -1 * config.gameplay.scene_speed;
-    holeGuide.checkWorldBounds = true;
-    holeGuide.outOfBoundsKill = true;
-
+        holeGuide.body.velocity.x = -1 * config.gameplay.scene_speed;
+        holeGuide.checkWorldBounds = true;
+        holeGuide.outOfBoundsKill = true;
+    }
 
     // graphics = this.add.graphics({ lineStyle: { width: 2, color: 0x0000ff }, fillStyle: { color: 0xff0000 }});
     // rect = new Phaser.Geom.Rectangle(250, 200, 300, 200);
     // holeGuide = graphics.strokeRectShape(rect);
     // holeGuide.body.velocity.x = -1 * config.gameplay.scene_speed;
 
+
+    // Fill upper area
+    if (holeFrom > 0) {
+        addFireworkUpper(holeFrom, this);
+    }
 
     // var firework = game.add.sprite(x, y, 'firework');
     // game.add(firework);
@@ -142,6 +153,34 @@ function addFireWork() {
     // firework.checkWorldBounds = true;
     // firework.outOfBoundsKill = true;
 
+}
+
+function addFireworkUpper(holeFrom, game) {
+    var fillCount = holeFrom;
+
+    while (fillCount >0) {
+        var fillBlockSize = getRndInteger(config.gameplay.firework.size_min, config.gameplay.firework.size_max);
+
+        // Cal position
+        fillSize = fillBlockSize * config.player.height;
+        fillScale = fillSize / config.gameplay.firework.actual_size;
+        fillPosY = (fillCount * config.player.height) - (fillSize / 2);
+
+        // Plot
+        var x = holePlotX; // will be random
+        var y = fillPosY;
+        var firework = game.physics.add.image( x, y, 'firework');
+
+        // Set size
+        firework.setScale(fillScale);
+
+        firework.body.velocity.x = -1 * config.gameplay.scene_speed;
+        firework.checkWorldBounds = true;
+        firework.outOfBoundsKill = true;
+
+        fillCount -= fillBlockSize;
+        console.log("Upper firework at " +fillCount+" size=" + fillBlockSize + "/" + holeFrom);
+    }
 }
 
 function jump(game) {
