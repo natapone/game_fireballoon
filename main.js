@@ -23,7 +23,7 @@ var config = {
     gameplay:{
         scene_speed: 200,
         loop_delay: 3000,
-        hole_size: 3,
+        hole_size: 2.5,
         debug: true,
         firework: {
             actual_size: 500,
@@ -100,7 +100,7 @@ function addFireWork() {
     // Set hole (0 - 6)
     // hole_id = Math.floor(Math.random() * block_max) + 1;
     holeId = getRndInteger(0, block_max - config.gameplay.hole_size);
-    holeId = 1;
+    // holeId = 0;
     holeFrom = holeId;
     holeTo = holeId + config.gameplay.hole_size;
 
@@ -137,6 +137,11 @@ function addFireWork() {
         addFireworkUpper(holeFrom, this);
     }
 
+    // Fill lower area
+    if (holeTo < block_max) {
+        addFireworkLower(holeTo, this);
+    }
+
     // var firework = game.add.sprite(x, y, 'firework');
     // game.add(firework);
 
@@ -155,10 +160,38 @@ function addFireWork() {
 
 }
 
+function addFireworkLower(holeTo, game) {
+    var fillCount = holeTo;
+
+    while (fillCount < block_max) {
+        var fillBlockSize = getRndInteger(config.gameplay.firework.size_min, config.gameplay.firework.size_max);
+
+        // Cal position
+        fillSize = fillBlockSize * config.player.height;
+        fillScale = fillSize / config.gameplay.firework.actual_size;
+        fillPosY = (fillCount * config.player.height) + (fillSize / 2);
+
+        // Plot
+        var x = holePlotX; // will be random
+        var y = fillPosY;
+        var firework = game.physics.add.image( x, y, 'firework');
+
+        // Set size
+        firework.setScale(fillScale);
+
+        firework.body.velocity.x = -1 * config.gameplay.scene_speed;
+        firework.checkWorldBounds = true;
+        firework.outOfBoundsKill = true;
+
+        fillCount += fillBlockSize;
+        console.log("Lower firework at " +fillCount+" size=" + fillBlockSize + "/" + (block_max-holeTo));
+    }
+}
+
 function addFireworkUpper(holeFrom, game) {
     var fillCount = holeFrom;
 
-    while (fillCount >0) {
+    while (fillCount > 0) {
         var fillBlockSize = getRndInteger(config.gameplay.firework.size_min, config.gameplay.firework.size_max);
 
         // Cal position
