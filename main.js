@@ -23,13 +23,17 @@ var config = {
     gameplay:{
         scene_speed: 200,
         loop_delay: 3000,
-        hole_size: 2.5,
+        hole_size: 3,
         debug: true,
         firework: {
             actual_size: 500,
             size_max: 5,
             size_min: 2,
-        }
+            border_offset: 5,
+        },
+        coin : {
+            height: 70,
+        },
     },
 };
 
@@ -45,6 +49,7 @@ function preload () {
     this.load.image('balloon', 'assets/Balloon.png');
     this.load.image('firework', 'assets/firework.png');
     this.load.image('holeGuide', 'assets/hole_guide.png');
+    this.load.image('coin', 'assets/coin.png');
 
     this.load.audio('jump', 'assets/jump.wav');
 }
@@ -65,7 +70,7 @@ function create () {
 
     timedEvent = this.time.addEvent({
         delay: config.gameplay.loop_delay,
-        callback: addFireWork,
+        callback: addNextChellenge,
         callbackScope: this,
         loop: true
     });
@@ -74,7 +79,7 @@ function create () {
 
 
     this.input.on('pointerdown', function (pointer) {
-        console.log(this.game.loop.frame, 'down B');
+        // console.log(this.game.loop.frame, 'down B');
 
         jump(this);
 
@@ -96,9 +101,36 @@ function update() {
 
 }
 
-function addFireWork() {
+// Firework or Coin
+function addNextChellenge() {
+    addFireWork(this);
+}
+
+function addCoin(holdId, game) {
+    //Add in empty space before next firework
+
+    spaceWidth = config.gameplay.scene_speed * config.gameplay.loop_delay / 1000;
+    spaceHeight = (config.gameplay.hole_size -1) * config.player.height;
+
+    // randX = getRndInteger(-1 * spaceWidth /2, spaceWidth /2); // left and right
+    randX = getRndInteger(0, spaceWidth * 0.75); // not to close to next one
+    randY = getRndInteger(0, spaceHeight);
+
+    x = game.cameras.main.displayWidth + randX;
+    y = holdId * config.player.height + (config.gameplay.coin.height/2) + randY;
+
+    var coin = game.physics.add.image( x, y, 'coin');
+
+    coin.body.velocity.x = -1 * config.gameplay.scene_speed;
+    coin.checkWorldBounds = true;
+    coin.outOfBoundsKill = true;
+
+    console.log("Add coin " + x + " / " + y);
+
+}
+
+function addFireWork(game) {
     // Set hole (0 - 6)
-    // hole_id = Math.floor(Math.random() * block_max) + 1;
     holeId = getRndInteger(0, block_max - config.gameplay.hole_size);
     // holeId = 0;
     holeFrom = holeId;
@@ -106,7 +138,7 @@ function addFireWork() {
 
 
     //position
-    holePlotX = this.cameras.main.displayWidth;
+    holePlotX = game.cameras.main.displayWidth;
     holePlotY = holeFrom * config.player.height + (holeTo * config.player.height - holeFrom * config.player.height) / 2
 
     // Debug - plot hole
@@ -117,7 +149,7 @@ function addFireWork() {
             " From " + holeFrom * config.player.height +
             "/" + holeTo * config.player.height
         );
-        var holeGuide = this.physics.add.image( holePlotX, holePlotY, 'holeGuide');
+        var holeGuide = game.physics.add.image( holePlotX, holePlotY, 'holeGuide');
 
         holeGuide.setScale(1, config.gameplay.hole_size);
 
@@ -134,30 +166,16 @@ function addFireWork() {
 
     // Fill upper area
     if (holeFrom > 0) {
-        addFireworkUpper(holeFrom, this);
+        addFireworkUpper(holeFrom, game);
     }
 
     // Fill lower area
     if (holeTo < block_max) {
-        addFireworkLower(holeTo, this);
+        addFireworkLower(holeTo, game);
     }
 
-    // var firework = game.add.sprite(x, y, 'firework');
-    // game.add(firework);
-
-
-    // var firework = this.physics.add.image( x, y, 'firework');
-    //
-    // // Set size
-    // firework.setScale(0.5);
-    //
-    // firework.body.setCircle(220);
-    // firework.body.offset.setTo(30, 30); //offset boundary
-    //
-    // firework.body.velocity.x = -1 * config.gameplay.scene_speed;
-    // firework.checkWorldBounds = true;
-    // firework.outOfBoundsKill = true;
-
+    // Add coin
+    addCoin(holeId, game);
 }
 
 function addFireworkLower(holeTo, game) {
@@ -178,6 +196,10 @@ function addFireworkLower(holeTo, game) {
 
         // Set size
         firework.setScale(fillScale);
+
+        borderSize = config.gameplay.firework.actual_size * config.gameplay.firework.border_offset / 100;
+        firework.body.setCircle(config.gameplay.firework.actual_size / 2 - borderSize);
+        firework.body.offset.setTo(borderSize, borderSize);
 
         firework.body.velocity.x = -1 * config.gameplay.scene_speed;
         firework.checkWorldBounds = true;
@@ -206,6 +228,10 @@ function addFireworkUpper(holeFrom, game) {
 
         // Set size
         firework.setScale(fillScale);
+
+        borderSize = config.gameplay.firework.actual_size * config.gameplay.firework.border_offset / 100;
+        firework.body.setCircle(config.gameplay.firework.actual_size / 2 - borderSize);
+        firework.body.offset.setTo(borderSize, borderSize);
 
         firework.body.velocity.x = -1 * config.gameplay.scene_speed;
         firework.checkWorldBounds = true;
