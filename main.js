@@ -23,7 +23,7 @@ var config = {
     gameplay:{
         scene_speed: 200,
         loop_delay: 3000,
-        hole_size: 3,
+        hole_size: 2,
         debug: false,
         firework: {
             actual_size: 500,
@@ -43,6 +43,7 @@ var game = new Phaser.Game(config);
 
 var timedEvent;
 var currentScore = 0;
+var restartTrigger = 0;
 var block_max = Math.floor(config.height / config.player.height);
 
 function preload () {
@@ -93,13 +94,21 @@ function create () {
 
     }, this);
 
-    overlapCollider = this.physics.add.overlap(balloon, this.coins, hitCoin );
+    // Collider event
+    overlapCollider_coin = this.physics.add.overlap(balloon, this.coins, hitCoin );
+    overlapCollider_firework = this.physics.add.overlap(balloon, this.fireworks, hitFirework );
 }
 
 function update() {
+    // Restart
+    if (restartTrigger) {
+        restartTrigger = 0;
+        this.scene.restart();
+    }
+
     // Check border
     if (balloon.y < 0 || balloon.y > this.cameras.main.displayHeight) {
-        restartGame(this);
+        restartGame();
         // console.log("--- RESTART ---");
     }
 
@@ -113,24 +122,27 @@ function update() {
     this.scoreText.setText('score: ' + currentScore);
 }
 
-function restartGame(game) {
+function restartGame() {
     currentScore = 0;
 
-    // balloon.x = game.cameras.main.centerX / 2;
-    // balloon.y = game.cameras.main.centerY;
-    game.scene.restart();
+    restartTrigger = 1;
+    // game.scene.restart();
+}
+
+function hitFirework(balloon, firework) {
+    // Update score
+
+    console.log("--- FIREWORK!! ---");
+
+    restartGame();
+
 }
 
 function hitCoin(balloon, coin) {
-
-
     // Update score
     currentScore++;
     console.log("+++ COIN!! +++ " + currentScore);
-    // game.scoreText.setText('score: ' + this.score);
 
-    //  Hide the sprite
-    // healthGroup.killAndHide(health);
     coin.destroy();
 
 }
@@ -241,6 +253,8 @@ function addFireworkLower(holeTo, game) {
         firework.outOfBoundsKill = true;
 
         fillCount += fillBlockSize;
+
+        game.fireworks.add(firework);
         console.log("Lower firework at " +fillCount+" size=" + fillBlockSize + "/" + (block_max-holeTo));
     }
 }
@@ -273,6 +287,8 @@ function addFireworkUpper(holeFrom, game) {
         firework.outOfBoundsKill = true;
 
         fillCount -= fillBlockSize;
+
+        game.fireworks.add(firework);
         console.log("Upper firework at " +fillCount+" size=" + fillBlockSize + "/" + holeFrom);
     }
 }
