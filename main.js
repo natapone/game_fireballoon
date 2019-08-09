@@ -24,7 +24,7 @@ var config = {
         scene_speed: 200,
         loop_delay: 3000,
         hole_size: 3,
-        debug: true,
+        debug: false,
         firework: {
             actual_size: 500,
             size_max: 5,
@@ -42,6 +42,7 @@ var game = new Phaser.Game(config);
 // new Phaser.Game(config);
 
 var timedEvent;
+var currentScore = 0;
 var block_max = Math.floor(config.height / config.player.height);
 
 function preload () {
@@ -55,6 +56,13 @@ function preload () {
 }
 
 function create () {
+    // this.score = 0;
+    let style = { font: '50px Arial', fill: '#fff' };
+    this.scoreText = this.add.text(30, 30, 'score: ' + currentScore, style);
+
+    this.coins = this.add.group();
+    this.fireworks = this.add.group();
+
     balloon = this.physics.add.image(
         this.cameras.main.centerX / 2,
         this.cameras.main.centerY,
@@ -63,8 +71,8 @@ function create () {
 
     balloon.setSize(60, config.player.height, true);
     balloon.body.gravity.y = 500;
-    balloon.body.collideWorldBounds = true;
-    balloon.body.bounce.set(0.5);
+    // balloon.body.collideWorldBounds = true;
+    // balloon.body.bounce.set(0.5);
 
     // this.time.events.loop(1500, addFireWork(this), this);
 
@@ -85,12 +93,15 @@ function create () {
 
     }, this);
 
+    overlapCollider = this.physics.add.overlap(balloon, this.coins, hitCoin );
 }
 
 function update() {
-    // console.log(game.input.isDown);
-    // console.log(game.input.pointer.isDown);
-    // console.log(timedEvent.getProgress().toString());
+    // Check border
+    if (balloon.y < 0 || balloon.y > this.cameras.main.displayHeight) {
+        restartGame(this);
+        // console.log("--- RESTART ---");
+    }
 
     // Slowly rotate the bird downward, up to a certain point.
     if (balloon.angle > 0) {
@@ -98,6 +109,29 @@ function update() {
         // console.log(balloon.angle);
     }
 
+    // Display score
+    this.scoreText.setText('score: ' + currentScore);
+}
+
+function restartGame(game) {
+    currentScore = 0;
+
+    // balloon.x = game.cameras.main.centerX / 2;
+    // balloon.y = game.cameras.main.centerY;
+    game.scene.restart();
+}
+
+function hitCoin(balloon, coin) {
+
+
+    // Update score
+    currentScore++;
+    console.log("+++ COIN!! +++ " + currentScore);
+    // game.scoreText.setText('score: ' + this.score);
+
+    //  Hide the sprite
+    // healthGroup.killAndHide(health);
+    coin.destroy();
 
 }
 
@@ -113,18 +147,19 @@ function addCoin(holdId, game) {
     spaceHeight = (config.gameplay.hole_size -1) * config.player.height;
 
     // randX = getRndInteger(-1 * spaceWidth /2, spaceWidth /2); // left and right
-    randX = getRndInteger(0, spaceWidth * 0.75); // not to close to next one
+    randX = getRndInteger(0, spaceWidth * 0.7); // not to close to next one
     randY = getRndInteger(0, spaceHeight);
 
     x = game.cameras.main.displayWidth + randX;
     y = holdId * config.player.height + (config.gameplay.coin.height/2) + randY;
 
-    var coin = game.physics.add.image( x, y, 'coin');
+    coin = game.physics.add.image( x, y, 'coin');
 
     coin.body.velocity.x = -1 * config.gameplay.scene_speed;
     coin.checkWorldBounds = true;
     coin.outOfBoundsKill = true;
 
+    game.coins.add(coin);
     console.log("Add coin " + x + " / " + y);
 
 }
