@@ -6,9 +6,8 @@ Test game concept
 $ npm install http-server -g
 
 # Run
+$ cd project/game_fireballoon
 $ http-server
 
 # Access
-http://127.0.0.1:8080
-http://10.0.2.15:8080
 http://33.33.33.2:8080
